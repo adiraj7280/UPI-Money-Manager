@@ -19,6 +19,17 @@ export function useTransactions({ setSummary }) {
       if (data.transactions.length !== txCountRef.current) {
         setTransactions(data.transactions);
         txCountRef.current = data.transactions.length;
+
+        // Fetch new summary to keep AnalyticsBlock in sync with Live Stream
+        try {
+          const summaryRes = await fetch(`${API_BASE}/summary`);
+          if (summaryRes.ok) {
+            const summaryData = await summaryRes.json();
+            setSummary(summaryData);
+          }
+        } catch (e) {
+          console.error("Failed to sync summary", e);
+        }
       }
       setError(null);
     } catch (err) {
