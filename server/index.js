@@ -109,12 +109,12 @@ function startStream() {
       // Very fast interval for bursts
       nextInterval = Math.random() * 400 + 100; 
     } else {
-      // Random jitter around the base interval
-      const jitter = (Math.random() * 8000) - 2000;
-      nextInterval = Math.max(2000, STREAM_INTERVAL_MS + jitter);
+      // Random jitter around the base interval (e.g. -15s to +30s)
+      const jitter = (Math.random() * 45000) - 15000;
+      nextInterval = Math.max(10000, STREAM_INTERVAL_MS + jitter);
       
-      // 5% chance to trigger a sudden burst of transactions
-      if (Math.random() < 0.05) {
+      // 1% chance to trigger a sudden burst of transactions (normal user behavior)
+      if (Math.random() < 0.01) {
         burstMode = true;
         burstCount = Math.floor(Math.random() * 4) + 2; // 2 to 5 rapid transactions
       }

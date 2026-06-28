@@ -151,7 +151,7 @@ const SIMULATION_TEMPLATES = [
 
 // ─── Live Stream Config ─────────────────────────────────────────────────────
 
-const STREAM_INTERVAL_MS = 4500;
+const STREAM_INTERVAL_MS = 45000;
 
 module.exports = {
   CATEGORIES,
