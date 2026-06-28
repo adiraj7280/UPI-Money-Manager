@@ -13,7 +13,7 @@ const cors = require("cors");
 const routes = require("./routes");
 const store = require("./store");
 const { parseTransaction } = require("./parser");
-const { ALERT_POOL, STREAM_INTERVAL_MS } = require("./constants");
+const { SIMULATION_TEMPLATES, STREAM_INTERVAL_MS } = require("./constants");
 const { runMigrations } = require("./db/migrations");
 const { runSeed } = require("./db/seed");
 
@@ -54,31 +54,46 @@ function pickRandom(arr) {
 }
 
 /**
- * Generate a random UPI-realistic amount between 50 and 5000.
- * Weighted toward smaller amounts: uses a square-root distribution so
- * values cluster in the 50–1000 range (~70% of outputs) while still
- * occasionally producing amounts up to 5000.
+ * Generate an amount based on the template's constraints.
  */
-function randomAmount() {
-  const min = 50;
-  const max = 5000;
-  // sqrt weighting: random^2 compresses toward 0, so (1 - random^2) * range
-  // produces a right-skewed distribution favouring smaller values.
-  const weighted = Math.pow(Math.random(), 2);
-  return Math.round(min + weighted * (max - min));
+function getRealisticAmount(config) {
+  if (config.exactAmounts) {
+    return pickRandom(config.exactAmounts);
+  } else if (config.amountRange) {
+    const [min, max] = config.amountRange;
+    // Slightly right-skewed distribution
+    const weighted = Math.pow(Math.random(), 1.5);
+    return Math.round(min + weighted * (max - min));
+  }
+  return 500; // fallback
 }
 
+let burstMode = false;
+let burstCount = 0;
+
 /**
- * Tick: pick a random alert template, inject a random amount, parse it,
- * and push the resulting transaction into the in-memory store.
+ * Tick: pick a random template valid for the current hour, inject a realistic
+ * amount, parse it, and push the resulting transaction into the in-memory store.
  */
 function streamTick() {
   try {
-    const amount = randomAmount();
-    const template = pickRandom(ALERT_POOL);
-    const raw = template.replace("{amount}", amount.toLocaleString("en-IN"));
+    const currentHour = new Date().getHours();
+    
+    // Filter templates valid for this hour
+    let validTemplates = SIMULATION_TEMPLATES.filter(t => t.validHours.includes(currentHour));
+    if (validTemplates.length === 0) validTemplates = SIMULATION_TEMPLATES; // fallback
+
+    const config = pickRandom(validTemplates);
+    const amount = getRealisticAmount(config);
+    
+    const raw = config.template.replace("{amount}", amount.toLocaleString("en-IN"));
     const transaction = parseTransaction(raw, amount);
     store.push(transaction);
+
+    if (burstMode && burstCount > 0) {
+      burstCount--;
+      if (burstCount <= 0) burstMode = false;
+    }
   } catch (err) {
     if (process.env.NODE_ENV !== "production") {
       console.error("[STREAM] tick error:", err.message);
@@ -88,9 +103,22 @@ function streamTick() {
 
 function startStream() {
   function scheduleNext() {
-    // Random jitter between -2000ms and +6000ms around the base interval
-    const jitter = (Math.random() * 8000) - 2000;
-    const nextInterval = Math.max(2000, STREAM_INTERVAL_MS + jitter);
+    let nextInterval;
+    
+    if (burstMode) {
+      // Very fast interval for bursts
+      nextInterval = Math.random() * 400 + 100; 
+    } else {
+      // Random jitter around the base interval
+      const jitter = (Math.random() * 8000) - 2000;
+      nextInterval = Math.max(2000, STREAM_INTERVAL_MS + jitter);
+      
+      // 5% chance to trigger a sudden burst of transactions
+      if (Math.random() < 0.05) {
+        burstMode = true;
+        burstCount = Math.floor(Math.random() * 4) + 2; // 2 to 5 rapid transactions
+      }
+    }
     
     setTimeout(() => {
       streamTick();
