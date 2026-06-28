@@ -18,8 +18,8 @@ export default function TransactionFeed({ transactions, loading, error, onCatego
     );
   }, [transactions, searchQuery]);
 
-  // Human Usability: Cap at 50 to prevent infinite DOM growth
-  const displayedTransactions = filteredTransactions.slice(0, 50);
+  // Human Usability: Cap at 250 to prevent infinite DOM growth
+  const displayedTransactions = filteredTransactions.slice(0, 250);
 
   // Group by date for human-readable sections
   const groupedTransactions = useMemo(() => {
@@ -76,7 +76,7 @@ export default function TransactionFeed({ transactions, loading, error, onCatego
           {searchQuery ? 'Search Results' : 'Recent Transactions'}
         </h2>
         <span className="text-xs text-stone-400 font-medium">
-          {filteredTransactions.length > 50 ? '50+ showing' : `${filteredTransactions.length} transactions`}
+          {filteredTransactions.length > 250 ? '250+ showing' : `${filteredTransactions.length} transactions`}
         </span>
       </div>
       
