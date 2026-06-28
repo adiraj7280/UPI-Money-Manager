@@ -116,6 +116,23 @@ function parseTransaction(raw, amount) {
     }
   }
 
+  // ── 5. Real-World Metadata Extraction ──────────────────────────────────────
+  let vpa = null;
+  let rrn = null;
+  let bankAccount = null;
+
+  // VPA match: basic email-like structure with @
+  const vpaMatch = safeRaw.match(/[\w.-]+@[a-zA-Z]+/);
+  if (vpaMatch) vpa = vpaMatch[0];
+
+  // RRN match: 12 digit number often preceded by Ref, UPI Ref, etc.
+  const rrnMatch = safeRaw.match(/(?:ref|upi ref)[\s:]*(\d{12})/i) || safeRaw.match(/\b(\d{12})\b/);
+  if (rrnMatch) rrn = rrnMatch[1] || rrnMatch[0];
+
+  // Bank Account match: A/c XX1234 or A/C *1234
+  const bankMatch = safeRaw.match(/A\/[cC]\s*(?:XX|\*)\d{4}/);
+  if (bankMatch) bankAccount = bankMatch[0];
+
   return {
     id: uuidv4(),
     raw: safeRaw,
@@ -127,6 +144,9 @@ function parseTransaction(raw, amount) {
     cashbackRow,
     expectedSavings,
     timestamp: new Date().toISOString(),
+    vpa,
+    rrn,
+    bankAccount
   };
 }
 

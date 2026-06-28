@@ -45,6 +45,14 @@ const TransactionCard = memo(({ transaction, onCategoryChange }) => {
         />
       </div>
 
+      {(transaction.vpa || transaction.rrn || transaction.bankAccount) && (
+        <div className="bg-[#F8F6F0] rounded-lg p-2 mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] sm:text-[11px] text-stone-500 font-mono">
+          {transaction.bankAccount && <span>Bank: {transaction.bankAccount}</span>}
+          {transaction.vpa && <span>VPA: {transaction.vpa}</span>}
+          {transaction.rrn && <span>Ref: {transaction.rrn}</span>}
+        </div>
+      )}
+
       {transaction.cashbackRow && transaction.expectedSavings > 0 && (
         <CashbackRow expectedSavings={transaction.expectedSavings} />
       )}

@@ -87,7 +87,17 @@ function streamTick() {
 }
 
 function startStream() {
-  setInterval(streamTick, STREAM_INTERVAL_MS);
+  function scheduleNext() {
+    // Random jitter between -2000ms and +6000ms around the base interval
+    const jitter = (Math.random() * 8000) - 2000;
+    const nextInterval = Math.max(2000, STREAM_INTERVAL_MS + jitter);
+    
+    setTimeout(() => {
+      streamTick();
+      scheduleNext();
+    }, nextInterval);
+  }
+  scheduleNext();
 }
 
 // ─── Start ──────────────────────────────────────────────────────────────────
@@ -97,6 +107,6 @@ runSeed();
 startStream();
 
 app.listen(PORT, () => {
-  console.log(`📡 Live transaction stream active — interval: ${STREAM_INTERVAL_MS}ms`);
+  console.log(`📡 Live transaction stream active — base interval: ${STREAM_INTERVAL_MS}ms (jitterized)`);
   console.log(`🚀 UPI Money Manager running on port ${PORT}`);
 });

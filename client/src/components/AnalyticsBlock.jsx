@@ -43,11 +43,16 @@ export default function AnalyticsBlock({ summary, loading }) {
         </div>
       </div>
       
-      <div>
-        {Object.entries(CATEGORY_CONFIG).map(([label, config]) => {
-          const amount = byCategory[label] || 0;
-          const percent = maxCategoryValue === 0 ? 0 : (amount / maxCategoryValue * 100).toFixed(1);
-          return (
+      <div className="flex flex-col gap-1">
+        {Object.entries(CATEGORY_CONFIG)
+          .map(([label, config]) => {
+            const amount = byCategory[label] || 0;
+            const percent = maxCategoryValue === 0 ? 0 : (amount / maxCategoryValue * 100).toFixed(1);
+            return { label, config, amount, percent };
+          })
+          .filter(cat => cat.amount > 0)
+          .sort((a, b) => b.amount - a.amount)
+          .map(({ label, config, amount, percent }) => (
             <ProgressTrack 
               key={label}
               label={label}
@@ -56,8 +61,10 @@ export default function AnalyticsBlock({ summary, loading }) {
               color={config.color}
               icon={config.icon}
             />
-          );
-        })}
+          ))}
+          {Object.keys(byCategory).length === 0 && (
+             <div className="text-center text-sm text-stone-400 py-4">No spending data yet.</div>
+          )}
       </div>
     </div>
   );

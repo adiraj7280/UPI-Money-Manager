@@ -21,7 +21,10 @@ function deserialize(dbRow) {
     autoTagged: dbRow.auto_tagged === 1,
     cashbackRow: dbRow.cashback_row === 1,
     expectedSavings: dbRow.expected_savings,
-    timestamp: dbRow.timestamp
+    timestamp: dbRow.timestamp,
+    vpa: dbRow.vpa || null,
+    rrn: dbRow.rrn || null,
+    bankAccount: dbRow.bank_account || null
   };
 }
 
@@ -39,12 +42,15 @@ function getById(id) {
 function push(transaction) {
   const dbRecord = serialize(transaction);
   const stmt = db.prepare(`
-    INSERT INTO transactions (id, raw, description, amount, type, category, auto_tagged, cashback_row, expected_savings, timestamp)
-    VALUES (@id, @raw, @description, @amount, @type, @category, @auto_tagged, @cashback_row, @expected_savings, @timestamp)
+    INSERT INTO transactions (id, raw, description, amount, type, category, auto_tagged, cashback_row, expected_savings, timestamp, vpa, rrn, bank_account)
+    VALUES (@id, @raw, @description, @amount, @type, @category, @auto_tagged, @cashback_row, @expected_savings, @timestamp, @vpa, @rrn, @bank_account)
   `);
   stmt.run({
     ...dbRecord,
-    expected_savings: dbRecord.expectedSavings
+    expected_savings: dbRecord.expectedSavings,
+    vpa: dbRecord.vpa || null,
+    rrn: dbRecord.rrn || null,
+    bank_account: dbRecord.bankAccount || null
   });
   return transaction;
 }
